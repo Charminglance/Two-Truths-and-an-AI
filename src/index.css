@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #14161F;
+  --color-paper: #EDE4D3;
+  --color-stamp-red: #B8333A;
+  --color-stamp-green: #3F6B4A;
+  --color-muted: #8C8471;
+  --font-case: "Special Elite", cursive;
+  --font-body: "Source Serif 4", serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+body {
+  background-color: var(--color-ink);
+  background-image: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.03), transparent 40%);
+}
