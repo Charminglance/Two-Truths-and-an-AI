@@ -27,9 +27,10 @@ async function generateContentWithRetry(model, prompt, retries = 3) {
         try {
             return await model.generateContent(prompt);
         } catch (err) {
-            if (err.message.includes('429') && attempt < retries - 1) {
+            const isRetryable = err.message.includes('429') || err.message.includes('503');
+            if (isRetryable && attempt < retries - 1) {
                 const waitTime = 20000; // 20 seconds
-                console.warn(`Rate limited, waiting ${waitTime / 1000}s before retry...`);
+                console.warn(`Gemini overloaded/rate-limited, waiting ${waitTime / 1000}s before retry...`);
                 await sleep(waitTime);
             } else {
                 throw err;
