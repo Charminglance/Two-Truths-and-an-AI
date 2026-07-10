@@ -11,5 +11,5 @@ jobs:
     steps:
       - name: Call generate-puzzle endpoint
         run: |
-          curl -X POST https://two-truths.safeel.in/api/generate-puzzle \
+          curl -X POST https://twotruth.safeel.in/api/generate-puzzle \
             -H "x-cron-secret: ${{ secrets.CRON_SECRET }}"
