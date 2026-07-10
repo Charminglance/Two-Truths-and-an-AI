@@ -1,0 +1,15 @@
+name: Generate Daily Puzzle
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call generate-puzzle endpoint
+        run: |
+          curl -X POST https://two-truths.safeel.in/api/generate-puzzle \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}"
