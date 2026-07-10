@@ -2,11 +2,20 @@ import { MongoClient } from 'mongodb';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const TOPICS = [
-    'Octopuses', 'Ancient Rome', 'Black holes', 'The human brain',
-    'Deep sea creatures', 'World War II', 'Volcanoes', 'Bees',
-    'The moon landing', 'Ancient Egypt', 'Sharks', 'The Great Wall of China',
-    'Dinosaurs', 'The human heart', 'Vikings', 'Antarctica',
-    'Spiders', 'The Amazon rainforest', 'Ancient Greece', 'Lightning',
+  // Pop culture & internet
+  'Viral internet memes', 'Celebrity feuds', 'Reality TV shows', 'TikTok trends',
+  'Video game speedruns', 'Board games', 'K-pop', 'Anime',
+  // Food & drink
+  'Fast food chains', 'Street food', 'Coffee culture', 'Spicy food records',
+  // Everyday weird facts
+  'Airline secrets', 'Amusement park rides', 'Casino games', 'Traffic laws around the world',
+  'Weird world records', 'Sleep and dreams', 'Money and currency', 'Superstitions',
+  // Sports
+  'Olympic history', 'Football (soccer) trivia', 'Extreme sports',
+  // Science/history, but the fun angle
+  'Space exploration', 'Ancient mysteries', 'Animal intelligence', 'Deep sea creatures',
+  'Serial killers and true crime', 'Cults and conspiracy theories', 'Ghost stories and hauntings',
+  'Famous heists', 'Lottery winners', 'Cryptids and monsters',
 ];
 
 function sleep(ms) {
