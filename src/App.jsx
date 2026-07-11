@@ -50,11 +50,16 @@ export default function App() {
     setGameOver(false);
   }
 
-  function handleSelectDate(date) {
-    resetRoundState();
-    setViewedDate(date);
-    loadPuzzle(fetchPuzzleByDate(date));
-  }
+  function getTodayString() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function handleSelectDate(date) {
+  resetRoundState();
+  const today = getTodayString();
+  setViewedDate(date === today ? null : date); // treat today-in-archive as live, not practice
+  loadPuzzle(fetchPuzzleByDate(date));
+}
 
   async function handleSelect(index) {
     setSelectedIndex(index);
