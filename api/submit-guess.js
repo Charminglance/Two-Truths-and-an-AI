@@ -23,11 +23,15 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const { deviceId, roundNumber, selectedIndex } = req.body;
+    const { deviceId, roundNumber, selectedIndex, date } = req.body;
 
     if (!deviceId || roundNumber === undefined || selectedIndex === undefined) {
         return res.status(400).json({ error: 'Missing deviceId, roundNumber, or selectedIndex' });
     }
+
+    const today = getTodayString();
+    const targetDate = date || today;
+    const isReplayingPast = targetDate !== today;
 
     try {
         const client = await getClient();
@@ -35,11 +39,10 @@ export default async function handler(req, res) {
         const puzzles = db.collection('puzzles');
         const users = db.collection('users');
 
-        const today = getTodayString();
-        const puzzle = await puzzles.findOne({ date: today });
+        const puzzle = await puzzles.findOne({ date: targetDate });
 
         if (!puzzle) {
-            return res.status(404).json({ error: 'No puzzle available for today' });
+            return res.status(404).json({ error: `No puzzle available for ${targetDate}` });
         }
 
         const round = puzzle.rounds[roundNumber - 1];
@@ -48,6 +51,15 @@ export default async function handler(req, res) {
         }
 
         const isCorrect = selectedIndex === round.fakeIndex;
+
+        // Practice mode: score the guess but never touch streak/history/stats
+        if (isReplayingPast) {
+            return res.status(200).json({
+                isCorrect,
+                fakeIndex: round.fakeIndex,
+                practiceMode: true,
+            });
+        }
 
         // Track per-user daily progress so refresh doesn't let them replay a round
         let user = await users.findOne({ deviceId });
@@ -58,7 +70,7 @@ export default async function handler(req, res) {
                 lastPlayedDate: null,
                 totalRoundsPlayed: 0,
                 totalRoundsCorrect: 0,
-                history: {}, // { "2026-07-09": { roundsAnswered: [...], correctCount: 0 } }
+                history: {}, // { "2026-07-09": { answers: {...}, correctCount: 0 } }
             };
             await users.insertOne(user);
         }

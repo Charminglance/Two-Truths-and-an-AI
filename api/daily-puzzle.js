@@ -18,11 +18,11 @@ export default async function handler(req, res) {
         const db = client.db('twotruthsdb');
         const puzzles = db.collection('puzzles');
 
-        const today = new Date().toISOString().split('T')[0];
-        const puzzle = await puzzles.findOne({ date: today });
+        const requestedDate = req.query.date || new Date().toISOString().split('T')[0];
+        const puzzle = await puzzles.findOne({ date: requestedDate });
 
         if (!puzzle) {
-            return res.status(404).json({ error: 'No puzzle available for today yet' });
+            return res.status(404).json({ error: `No puzzle available for ${requestedDate}` });
         }
 
         // Strip fakeIndex before sending to client — don't leak the answer
