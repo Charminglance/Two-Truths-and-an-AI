@@ -12,6 +12,7 @@ export default function ArchiveCalendar({ isOpen, onClose, onSelectDate, current
 
     useEffect(() => {
         if (isOpen) {
+            setLoading(true);
             fetchPuzzleDates()
                 .then((data) => setDates(data.dates || []))
                 .finally(() => setLoading(false));

@@ -8,6 +8,23 @@ import StreakBadge from './components/StreakBadge';
 import ArchiveCalendar from './components/ArchiveCalendar';
 import ProgressDots from './components/ProgressDots';
 
+function getTodayString() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function getProgressKey(date) {
+  return `ttai_progress_${date}`;
+}
+
+function saveProgress(date, data) {
+  localStorage.setItem(getProgressKey(date), JSON.stringify(data));
+}
+
+function loadProgress(date) {
+  const raw = localStorage.getItem(getProgressKey(date));
+  return raw ? JSON.parse(raw) : null;
+}
+
 export default function App() {
   const [puzzle, setPuzzle] = useState(null);
   const [roundIndex, setRoundIndex] = useState(0);
@@ -36,9 +53,21 @@ export default function App() {
           setError(data.error);
         } else {
           setPuzzle(data);
+          const saved = loadProgress(data.date);
+          if (saved) {
+            setRoundIndex(saved.roundIndex);
+            setResults(saved.results);
+            setGameOver(saved.gameOver);
+          } else {
+            setRoundIndex(0);
+            setResults([]);
+            setGameOver(false);
+          }
+          setSelectedIndex(null);
+          setLastResult(null);
         }
       })
-      .catch(() => setError("Could not load this puzzle"))
+      .catch(() => setError('Could not load this puzzle'))
       .finally(() => setLoading(false));
   }
 
@@ -50,16 +79,12 @@ export default function App() {
     setGameOver(false);
   }
 
-  function getTodayString() {
-  return new Date().toISOString().split('T')[0];
-}
-
-function handleSelectDate(date) {
-  resetRoundState();
-  const today = getTodayString();
-  setViewedDate(date === today ? null : date); // treat today-in-archive as live, not practice
-  loadPuzzle(fetchPuzzleByDate(date));
-}
+  function handleSelectDate(date) {
+    resetRoundState();
+    const today = getTodayString();
+    setViewedDate(date === today ? null : date); // treat today-in-archive as live, not practice
+    loadPuzzle(fetchPuzzleByDate(date));
+  }
 
   async function handleSelect(index) {
     setSelectedIndex(index);
@@ -72,21 +97,31 @@ function handleSelectDate(date) {
       return;
     }
 
-    setLastResult({ isCorrect: response.isCorrect, fakeIndex: response.fakeIndex });
-    setResults((prev) => [...prev, response.isCorrect]);
+    // If we already answered this round (e.g. resubmitted after a stale refresh),
+    // trust the backend's recorded answer instead of assuming failure.
+    const isCorrect = response.alreadyAnswered ? response.wasCorrect : response.isCorrect;
+
+    setLastResult({ isCorrect, fakeIndex: response.fakeIndex });
+    const newResults = [...results, isCorrect];
+    setResults(newResults);
     if (!response.practiceMode) {
       setStreak(response.streak ?? streak);
     }
+    saveProgress(dateForRequest, { roundIndex, results: newResults, gameOver: false });
   }
 
   function handleNext() {
     const isLast = roundIndex === puzzle.rounds.length - 1;
+    const dateForRequest = viewedDate || puzzle.date;
     if (isLast) {
       setGameOver(true);
+      saveProgress(dateForRequest, { roundIndex, results, gameOver: true });
     } else {
-      setRoundIndex((prev) => prev + 1);
+      const nextIndex = roundIndex + 1;
+      setRoundIndex(nextIndex);
       setSelectedIndex(null);
       setLastResult(null);
+      saveProgress(dateForRequest, { roundIndex: nextIndex, results, gameOver: false });
     }
   }
 
