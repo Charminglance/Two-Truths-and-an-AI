@@ -26,3 +26,8 @@ export async function fetchPuzzleDates() {
     const res = await fetch('/api/puzzle-dates');
     return res.json();
 }
+
+export async function fetchUserStats(deviceId) {
+    const res = await fetch(`/api/user-stats?deviceId=${deviceId}`);
+    return res.json();
+}

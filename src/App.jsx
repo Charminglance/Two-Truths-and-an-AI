@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getDeviceId } from './lib/device-id';
-import { fetchDailyPuzzle, submitGuess, fetchPuzzleByDate } from './lib/api';
+import { fetchDailyPuzzle, submitGuess, fetchPuzzleByDate, fetchUserStats } from './lib/api';
 import RoundCard from './components/RoundCard';
 import ResultReveal from './components/ResultReveal';
 import ShareCard from './components/ShareCard';
@@ -42,6 +42,9 @@ export default function App() {
 
   useEffect(() => {
     loadPuzzle(fetchDailyPuzzle());
+    fetchUserStats(deviceId).then((data) => {
+      if (!data.error) setStreak(data.streak);
+    });
   }, []);
 
   function loadPuzzle(promise) {
