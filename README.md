@@ -95,14 +95,14 @@ The mechanic is simple on purpose - spot-the-fake is easy to explain in one sent
 ## How a puzzle actually gets made
 
 1. **00:00 UTC**, a GitHub Actions workflow fires a single authenticated `curl` at `/api/generate-puzzle`.
-2. The function checks Mongo — if today's puzzle already exists, it's a no-op (idempotent, safe to re-trigger by hand).
+2. The function checks Mongo - if today's puzzle already exists, it's a no-op (idempotent, safe to re-trigger by hand).
 3. It picks 5 random topics from a curated pool of ~50 (skewed toward pop culture, internet trivia, true crime, and weird history - deliberately *not* textbook categories).
 4. **One** Gemini call asks for all 5 rounds at once, under a heavily tone-locked prompt: 20-word statement cap, banned academic phrasing, explicit good/bad examples, instructions to fabricate using a concrete fake detail (a year, a name, a number) rather than invented science.
-5. The response is validated locally - structure, word count, duplicate detection, a jargon-word blocklist — with zero additional API calls. If it fails validation, the whole generation retries.
+5. The response is validated locally - structure, word count, duplicate detection, a jargon-word blocklist - with zero additional API calls. If it fails validation, the whole generation retries.
 6. Retries with backoff handle Gemini's free-tier `429`/`503` transient errors automatically.
 7. Result gets written to MongoDB, keyed by date.
 
-This went through a real iteration cycle worth mentioning: the first version made 10+ Gemini calls per puzzle (generate + verify, per topic) and blew through the daily free-tier quota in a single test session. Batching it into one call cut that to 1/day - a 90%+ reduction — while a local heuristic validator replaced the second API-based verification pass at zero marginal cost.
+This went through a real iteration cycle worth mentioning: the first version made 10+ Gemini calls per puzzle (generate + verify, per topic) and blew through the daily free-tier quota in a single test session. Batching it into one call cut that to 1/day - a 90%+ reduction - while a local heuristic validator replaced the second API-based verification pass at zero marginal cost.
 
 ## Local development
 
@@ -126,10 +126,6 @@ curl -X POST http://localhost:3000/api/generate-puzzle -H "x-cron-secret: YOUR_C
 | `MONGODB_URI` | MongoDB Atlas connection string |
 | `GEMINI_API_KEY` | Gemini API key from Google AI Studio |
 | `CRON_SECRET` | Shared secret so only the scheduled GitHub Action can trigger generation |
-
-## Design language
-
-Case-file / interrogation-room aesthetic: ink-navy background, aged-paper statement cards, typewriter display face (`Special Elite`) for headings, serif body text for the statements themselves (reads like a report), monospace for meta labels. The signature interaction is the reveal — a rotated rubber stamp slams down on each statement, red for `FABRICATED`, green for `VERIFIED`.
 
 ---
 
