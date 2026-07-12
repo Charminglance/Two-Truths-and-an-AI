@@ -2,7 +2,7 @@
 
 # 🕵️ Two Truths and an AI
 
-**A daily game of spot-the-lie — except the liar is an AI, and it's very convincing.**
+**A daily game of spot-the-lie - except the liar is an AI, and it's very convincing.**
 
 [![Play Now](https://img.shields.io/badge/Play-twotruth.safeel.in-B8333A?style=for-the-badge)](https://twotruth.safeel.in)
 ![React](https://img.shields.io/badge/React-19-149ECA?style=flat-square&logo=react&logoColor=white)
@@ -17,7 +17,7 @@
 
 ## What is this
 
-Every day, you get 5 rounds. Each round drops 3 statements about a topic — two are true, one was fabricated by AI to sound just as convincing. Your job: catch the lie before it catches you.
+Every day, you get 5 rounds. Each round drops 3 statements about a topic - two are true, one was fabricated by AI to sound just as convincing. Your job: catch the lie before it catches you.
 
 No sign-up. No app to download. Open the tab, play in under two minutes, come back tomorrow.
 
@@ -40,18 +40,18 @@ No sign-up. No app to download. Open the tab, play in under two minutes, come ba
 
 ## Why it's not just another Wordle clone
 
-The mechanic is simple on purpose — spot-the-fake is easy to explain in one sentence. The actual engineering problem lives underneath it:
+The mechanic is simple on purpose - spot-the-fake is easy to explain in one sentence. The actual engineering problem lives underneath it:
 
-**Making an AI lie *well* is harder than making it tell the truth.** Ask Gemini for a false statement and by default you get something vague, hedged, or obviously synthetic ("some believe..."). Getting genuinely convincing hallucinations — confident, specific, textured with a fake year/name/number the way a *real* hallucination would be — took real iteration on prompting, tone-locking, and validation. That's the part of this project actually worth talking about in an interview: not "I built a trivia game," but "I figured out how to make an LLM lie convincingly on demand, on a budget of one free-tier API call a day."
+**Making an AI lie *well* is harder than making it tell the truth.** Ask Gemini for a false statement and by default you get something vague, hedged, or obviously synthetic ("some believe..."). Getting genuinely convincing hallucinations - confident, specific, textured with a fake year/name/number the way a *real* hallucination would be - took real iteration on prompting, tone-locking, and validation. That's the part of this project actually worth talking about in an interview: not "I built a trivia game," but "I figured out how to make an LLM lie convincingly on demand, on a budget of one free-tier API call a day."
 
 ## Features
 
-- 🗞️ **Daily case file** — 5 fresh rounds a day, generated once by Gemini and cached, not regenerated per visitor
-- 🔥 **Real streaks** — anonymous device ID in `localStorage`, no login, but your streak actually persists day to day
-- 📂 **Case archive** — browse and replay any past day's puzzle in practice mode, without touching your streak
-- 🖋️ **Interrogation-room aesthetic** — statements read like evidence cards; the reveal is a literal rubber-stamp verdict ("VERIFIED" / "FABRICATED")
-- 📤 **Shareable results** — Wordle-style emoji grid + streak, one tap to copy
-- 💸 **Genuinely $0 to run** — every piece of the stack sits on a free tier
+- 🗞️ **Daily case file** - 5 fresh rounds a day, generated once by Gemini and cached, not regenerated per visitor
+- 🔥 **Real streaks** - anonymous device ID in `localStorage`, no login, but your streak actually persists day to day
+- 📂 **Case archive** - browse and replay any past day's puzzle in practice mode, without touching your streak
+- 🖋️ **Interrogation-room aesthetic** - statements read like evidence cards; the reveal is a literal rubber-stamp verdict ("VERIFIED" / "FABRICATED")
+- 📤 **Shareable results** - Wordle-style emoji grid + streak, one tap to copy
+- 💸 **Genuinely $0 to run** - every piece of the stack sits on a free tier
 
 ## Tech stack
 
@@ -67,7 +67,7 @@ The mechanic is simple on purpose — spot-the-fake is easy to explain in one se
 ## Architecture
 
 ```
-├── api/                        # Vercel serverless functions — the entire backend
+├── api/                        # Vercel serverless functions - the entire backend
 │   ├── generate-puzzle.js      # Cron-triggered: one Gemini call → 5 rounds → Mongo
 │   ├── daily-puzzle.js         # GET today's (or ?date=YYYY-MM-DD) puzzle, answers stripped
 │   ├── submit-guess.js         # POST a guess: scores it, updates streak (or not, in practice mode)
@@ -82,7 +82,7 @@ The mechanic is simple on purpose — spot-the-fake is easy to explain in one se
 │   │   ├── ShareCard.jsx           # End-of-day share grid
 │   │   ├── StreakBadge.jsx         # Streak counter + archive trigger
 │   │   ├── ArchiveCalendar.jsx     # Slide-out panel listing past cases
-│   │   └── ProgressDots.jsx        # Round 1–5 progress indicator
+│   │   └── ProgressDots.jsx        # Round 1-5 progress indicator
 │   ├── lib/
 │   │   ├── device-id.js        # Anonymous localStorage device ID, no auth needed
 │   │   └── api.js              # Typed fetch wrappers for every /api route
@@ -96,13 +96,13 @@ The mechanic is simple on purpose — spot-the-fake is easy to explain in one se
 
 1. **00:00 UTC**, a GitHub Actions workflow fires a single authenticated `curl` at `/api/generate-puzzle`.
 2. The function checks Mongo — if today's puzzle already exists, it's a no-op (idempotent, safe to re-trigger by hand).
-3. It picks 5 random topics from a curated pool of ~50 (skewed toward pop culture, internet trivia, true crime, and weird history — deliberately *not* textbook categories).
+3. It picks 5 random topics from a curated pool of ~50 (skewed toward pop culture, internet trivia, true crime, and weird history - deliberately *not* textbook categories).
 4. **One** Gemini call asks for all 5 rounds at once, under a heavily tone-locked prompt: 20-word statement cap, banned academic phrasing, explicit good/bad examples, instructions to fabricate using a concrete fake detail (a year, a name, a number) rather than invented science.
-5. The response is validated locally — structure, word count, duplicate detection, a jargon-word blocklist — with zero additional API calls. If it fails validation, the whole generation retries.
+5. The response is validated locally - structure, word count, duplicate detection, a jargon-word blocklist — with zero additional API calls. If it fails validation, the whole generation retries.
 6. Retries with backoff handle Gemini's free-tier `429`/`503` transient errors automatically.
 7. Result gets written to MongoDB, keyed by date.
 
-This went through a real iteration cycle worth mentioning: the first version made 10+ Gemini calls per puzzle (generate + verify, per topic) and blew through the daily free-tier quota in a single test session. Batching it into one call cut that to 1/day — a 90%+ reduction — while a local heuristic validator replaced the second API-based verification pass at zero marginal cost.
+This went through a real iteration cycle worth mentioning: the first version made 10+ Gemini calls per puzzle (generate + verify, per topic) and blew through the daily free-tier quota in a single test session. Batching it into one call cut that to 1/day - a 90%+ reduction — while a local heuristic validator replaced the second API-based verification pass at zero marginal cost.
 
 ## Local development
 
