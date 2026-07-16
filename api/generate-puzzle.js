@@ -1,24 +1,30 @@
 import { MongoClient } from 'mongodb';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Curated pool — skews toward "would actually get sent in a group chat"
-// rather than textbook trivia categories.
+// Curated pool — skews toward things an Indian audience already has context
+// on (Bollywood, cricket, Indian food, Indian apps, everyday India-specific
+// rules) so the "wait, WHAT?" reaction actually lands, with a smaller slice
+// of globally-relatable modern topics mixed in for variety.
 const TOPICS = [
-  'Viral internet memes', 'Celebrity feuds', 'Reality TV shows', 'TikTok trends',
-  'Video game speedruns', 'Board games', 'K-pop', 'Anime',
-  'Fast food chains', 'Street food', 'Coffee culture', 'Spicy food records',
-  'Airline secrets', 'Amusement park rides', 'Casino games', 'Traffic laws around the world',
-  'Weird world records', 'Sleep and dreams', 'Money and currency', 'Superstitions',
-  'Olympic history', 'Football (soccer) trivia', 'Extreme sports',
-  'Space exploration', 'Ancient mysteries', 'Animal intelligence', 'Deep sea creatures',
-  'True crime', 'Cults and conspiracy theories', 'Ghost stories and hauntings',
-  'Famous heists', 'Lottery winners', 'Cryptids and monsters',
-  'Celebrity scandals', 'Movie flops and box office bombs', 'One-hit wonders',
-  'Wedding traditions around the world', 'Weird laws that still exist', 'Prison escapes',
-  'Cults of personality in history', 'Con artists and scams', 'Wild animal attacks',
-  'Extreme diets and fasting trends', 'Haunted objects', 'Unsolved mysteries',
-  'Internet urban legends', 'Ancient Rome scandals', 'Royal family drama',
-  'Sports superstitions', 'Music industry secrets',
+  // Indian pop culture & entertainment
+  'Bollywood behind-the-scenes secrets', 'Bollywood box office flops', 'South Indian cinema (Kollywood/Tollywood)',
+  'Indian reality TV shows', 'Indian YouTubers and influencers', 'Indian web series drama',
+  'Cricket and IPL trivia', 'Indian cricketers off the field',
+  // Indian food & everyday life
+  'Street food across Indian cities', 'Regional Indian food rivalries', 'Indian fast food chain secrets',
+  'Chai and filter coffee culture', 'Indian wedding traditions and expenses', 'Indian railway facts and rules',
+  'Auto-rickshaw and traffic rules in India', 'Indian festival traditions', 'Bizarre Indian government rules',
+  'Indian school and exam rules', 'Indian startup and unicorn drama', 'UPI and Indian fintech trivia',
+  // Indian internet & viral culture
+  'Indian memes and viral trends', 'Indian Instagram and TikTok-era trends', 'Indian gaming and esports',
+  'Indian celebrity social media drama', 'Indian brand ad controversies',
+  // Broader relatable modern topics (kept for variety)
+  'Weird laws that still exist around the world', 'Weird world records', 'Airline and airport rules',
+  'Fast food menu items around the world', 'Social media platform rules and bans',
+  'Streaming service secrets', 'Weird product recalls', 'Theme park and ride safety rules',
+  'Weird sports rules', 'Bizarre real product warning labels', 'Strange things that are technically legal',
+  'True crime', 'Ghost stories and hauntings', 'Cryptids and monsters', 'Unsolved mysteries',
+  'Con artists and scams', 'Lottery winners', 'Famous heists',
 ];
 
 function sleep(ms) {
@@ -67,10 +73,11 @@ function validateRound(round) {
   const unique = new Set(round.statements.map((s) => s.trim().toLowerCase()));
   if (unique.size !== 3) return false;
 
-  // Reject overly jargon-y statements as a light heuristic safety net
+  // Reject overly jargon-y or overly obscure-history statements as a light heuristic safety net
   const jargonFlags = [
     'correlated', 'quantum', 'infrasound', 'pareidolia', 'longitudinal study',
     'peer-reviewed', 'statistically significant', 'methodology', 'empirical',
+    'dynasty', 'ancient', 'medieval', 'century', 'civilization',
   ];
   const hasJargon = round.statements.some((s) =>
     jargonFlags.some((word) => s.toLowerCase().includes(word))
@@ -83,55 +90,65 @@ function validateRound(round) {
 async function generateFullPuzzle(genAI, topics) {
   const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-  const prompt = `You are writing content for a viral daily phone game called "Two Truths and an AI."
+  const prompt = `You are writing content for a viral daily phone game called "Two Truths and an AI,"
+aimed primarily at a young Indian audience (college students, young professionals across India).
 Players read 3 short statements about a topic and have to guess which one is an AI-generated lie.
-The game lives or dies on how ENTERTAINING and SHAREABLE the statements are — if they're boring
-or read like a textbook, nobody plays again tomorrow. Your only job right now is to make this
-fun. Not educational. Not academic. Fun.
+The game lives or dies on how ENTERTAINING and RELATABLE the statements are — if a statement
+needs background an Indian reader wouldn't have, it fails, no matter how "true" it is.
 
 Topics for today (use each exactly once, in this exact order):
 ${topics.map((t, i) => `${i + 1}. ${t}`).join('\n')}
 
 For EACH topic, write exactly 3 statements:
-- 2 must be TRUE and genuinely wild, surprising, or juicy facts — the kind of thing that makes
-  someone go "wait, WHAT?" and immediately show the person next to them. Prioritize the most
-  shocking, funny, gross, dramatic, or unbelievable true facts you know about the topic. Avoid
-  "safe" or commonly-known facts — dig for the weird ones.
+- 2 must be TRUE and genuinely surprising facts. WHEN THE TOPIC IS INDIA-SPECIFIC (Bollywood,
+  cricket/IPL, Indian food, Indian apps/UPI, Indian railways, Indian festivals, Indian startups,
+  Indian traffic/government rules, Indian internet culture), lean fully into real Indian names,
+  brands, cities, and numbers — Mumbai, Bengaluru, Delhi, Chennai, Swiggy, Zomato, Paytm, IRCTC,
+  BCCI, specific actors/cricketers, specific Indian laws — not vague or Western substitutes.
+  WHEN THE TOPIC IS GLOBAL/general, keep it modern and relatable but still pick facts an Indian
+  reader would find wild and easy to picture. Prioritize facts that make someone go "wait, WHAT?
+  no way" — a weird rule, a wild real number, a policy that sounds made up but isn't.
 - Exactly 1 must be FALSE, written to sound just as wild and believable as the true ones.
-  Make it convincing using ONE specific concrete detail — a year, a number, a name, a place,
-  a brand — NOT a fake scientific mechanism, NOT invented jargon, NOT a fake "study."
-  The best fake statements are dramatic and specific, like a juicy rumor, not clinical.
+  Make it convincing using ONE specific concrete detail — a year, a number, a name, a brand,
+  a city — NOT a fake scientific mechanism, NOT invented jargon, NOT a fake "study."
+  The best fake statements sound like a real rule, policy, or celebrity story that got
+  exaggerated, not a history lesson.
 
-STRICT TONE AND STYLE RULES — follow these exactly:
-- Write like you're texting a friend a crazy fact, or like a viral tweet. Casual, punchy, direct.
-- Every statement: ONE sentence, maximum 20 words. No semicolons. No stacked clauses. No
-  "which resulted in" or "leading to" style academic connectors.
-- Use plain, everyday words a 12-year-old would understand. Zero jargon. Banned words/style:
-  scientific-sounding terms, invented mechanisms, phrases like "research indicates," "studies show,"
-  "correlated with," "linked to," or anything that sounds like a Wikipedia summary.
-- Favor concrete drama over abstract explanation: names, numbers, specific years, specific places,
-  specific brands/people. "Weird and specific" beats "vague and general" every time.
-- Inject personality and a sense of humor where the topic allows it. It's OK to sound a little
-  unhinged or gossipy — this is entertainment, not a report.
-- Do NOT hedge or use qualifiers like "reportedly," "allegedly," "some believe," "it is said" —
-  state everything as a flat, confident fact (yes, even the false one — it should sound just as
-  sure of itself as the true ones).
+HARD BAN — do not use any of these, they kill engagement:
+- Ancient/medieval history, old dynasties, or anything more than ~30 years old unless it's
+  directly about a still-famous modern event/person/brand
+- Academic/scientific-sounding facts (biology mechanisms, physics, psychology terms)
+- Generic Western-only references when an Indian equivalent exists and fits better
+- Anything requiring the reader to already know an obscure fact just to parse the sentence
 
-GOOD EXAMPLES (this is the exact tone to match):
-- "Octopuses have three hearts, and two of them stop beating the moment they start swimming."
+STRICT TONE AND STYLE RULES:
+- Write like you're texting a friend a crazy fact, or like a viral Indian Twitter/Instagram post.
+  Casual, punchy, direct.
+- Every statement: ONE sentence, maximum 20 words. No semicolons. No stacked clauses.
+- Use plain, everyday words — the kind of English used in Indian meme captions, not textbook English.
+- Favor concrete drama over abstract explanation: real names, numbers, specific brands/cities.
+- Inject personality and humor. It's fine to sound gossipy — this is entertainment, not a report.
+- Do NOT hedge with "reportedly," "allegedly," "some believe" — state everything as a flat,
+  confident fact, even the false one.
+
+GOOD EXAMPLES (this is the exact tone, recency, and Indian-relevance to match):
+- "Swiggy once delivered a single ice cube to a customer in Bengaluru who requested it as a joke."
+- "MS Dhoni owns a private zoo at his Ranchi farmhouse with over 200 dog breeds."
+- "Mumbai locals carry over 7.5 million passengers a day, more than the population of Switzerland."
+- "IRCTC's website used to crash so often during Tatkal booking that college kids built browser extensions just to beat it."
+- "Some Bengaluru traffic signals have a countdown timer so precise that auto drivers switch off engines to save fuel."
+- "A man in Kerala legally renamed himself after Google Pay to get free publicity in 2019."
+
+BAD EXAMPLES (never write like this — too historical, too academic, or unrelatable):
 - "In 1518, dozens of people in Strasbourg danced nonstop for days until several dropped dead."
-- "McDonald's once tried selling bubblegum-flavored broccoli to get kids to eat vegetables."
-- "A man in Florida legally married a video game character in 2009 and it still isn't annulled."
-- "Bananas are technically berries, but strawberries are not."
-
-BAD EXAMPLES (never write like this):
 - "Infrasound has been scientifically linked to feelings of unease in allegedly haunted locations."
 - "A landmark study published in a peer-reviewed journal found a statistically significant correlation..."
-- "This phenomenon is often attributed to psychological factors such as pareidolia."
+- "In ancient Rome, senators would often..."
 
-Before finalizing, mentally re-read every statement and ask: "Would a 19-year-old actually send
-this to a friend as a funny text?" If any statement sounds like homework, rewrite it simpler and
-weirder.
+Before finalizing, mentally re-read every statement and ask: "Would a young Indian reader
+immediately get why this is surprising, without needing extra context?" If a statement needs
+background they probably don't have, replace it with something about an Indian brand, celebrity,
+city, or everyday rule instead.
 
 Respond ONLY with valid JSON in this exact format — no markdown, no code fences, no commentary:
 {
@@ -151,7 +168,7 @@ Respond ONLY with valid JSON in this exact format — no markdown, no code fence
 
   const invalidIndex = parsed.rounds.findIndex((r) => !validateRound(r));
   if (invalidIndex !== -1) {
-    throw new Error(`Round ${invalidIndex + 1} failed validation (malformed, jargon-y, or duplicate statements)`);
+    throw new Error(`Round ${invalidIndex + 1} failed validation (malformed, jargon-y/historical, or duplicate statements)`);
   }
 
   return parsed.rounds;
