@@ -22,8 +22,9 @@ export async function fetchLeaderboard() {
     return res.json();
 }
 
-export async function fetchPuzzleDates() {
-    const res = await fetch('/api/puzzle-dates');
+export async function fetchPuzzleDates(deviceId) {
+    const url = deviceId ? `/api/puzzle-dates?deviceId=${deviceId}` : '/api/puzzle-dates';
+    const res = await fetch(url);
     return res.json();
 }
 

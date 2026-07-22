@@ -198,6 +198,7 @@ export default function App() {
         onClose={() => setArchiveOpen(false)}
         onSelectDate={handleSelectDate}
         currentDate={viewedDate || puzzle.date}
+        deviceId={deviceId}
       />
     </div>
   );

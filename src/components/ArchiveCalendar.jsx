@@ -6,18 +6,18 @@ function formatDateLabel(dateStr) {
     return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
-export default function ArchiveCalendar({ isOpen, onClose, onSelectDate, currentDate }) {
+export default function ArchiveCalendar({ isOpen, onClose, onSelectDate, currentDate, deviceId }) {
     const [dates, setDates] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         if (isOpen) {
             setLoading(true);
-            fetchPuzzleDates()
+            fetchPuzzleDates(deviceId)
                 .then((data) => setDates(data.dates || []))
                 .finally(() => setLoading(false));
         }
-    }, [isOpen]);
+    }, [isOpen, deviceId]);
 
     if (!isOpen) return null;
 
@@ -36,20 +36,30 @@ export default function ArchiveCalendar({ isOpen, onClose, onSelectDate, current
                     <p className="text-muted font-mono text-sm">No past cases yet — check back tomorrow.</p>
                 ) : (
                     <div className="flex flex-col gap-2">
-                        {dates.map((date) => (
+                        {dates.map(({ date, completed }) => (
                             <button
                                 key={date}
                                 onClick={() => {
                                     onSelectDate(date);
                                     onClose();
                                 }}
-                                className={`text-left font-mono text-sm px-4 py-3 rounded-sm border transition-colors
+                                className={`flex items-center justify-between text-left font-mono text-sm px-4 py-3 rounded-sm border transition-colors
                   ${date === currentDate
                                         ? 'bg-paper text-ink border-paper'
                                         : 'bg-transparent text-paper border-muted/30 hover:border-paper'}`}
                             >
-                                {formatDateLabel(date)}
-                                {date === currentDate && <span className="ml-2 text-xs">(viewing)</span>}
+                                <span>
+                                    {formatDateLabel(date)}
+                                    {date === currentDate && <span className="ml-2 text-xs">(viewing)</span>}
+                                </span>
+                                {completed && (
+                                    <span
+                                        className={`ml-3 text-xs shrink-0 ${date === currentDate ? 'text-ink' : 'text-muted'}`}
+                                        title="Completed"
+                                    >
+                                        ✓ Solved
+                                    </span>
+                                )}
                             </button>
                         ))}
                     </div>
