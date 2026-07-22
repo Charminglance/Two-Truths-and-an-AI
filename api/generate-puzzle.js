@@ -53,6 +53,23 @@ function pickRandomTopics(count) {
   return shuffled.slice(0, count);
 }
 
+// Gemini reliably drafts the 2 truths first and appends the fabricated
+// statement last, so fakeIndex comes back as 2 almost every time regardless
+// of prompting. Shuffle each round's statements ourselves and remap
+// fakeIndex so the lie's position is actually uniform across 0/1/2.
+function shuffleRound(round) {
+  const order = [0, 1, 2];
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+
+  const statements = order.map((originalIndex) => round.statements[originalIndex]);
+  const fakeIndex = order.indexOf(round.fakeIndex);
+
+  return { ...round, statements, fakeIndex };
+}
+
 // Zero-cost local sanity checks — replaces the old second-API-call
 // verification pass. Catches structural and tone failures without
 // spending quota.
@@ -171,7 +188,7 @@ Respond ONLY with valid JSON in this exact format — no markdown, no code fence
     throw new Error(`Round ${invalidIndex + 1} failed validation (malformed, jargon-y/historical, or duplicate statements)`);
   }
 
-  return parsed.rounds;
+  return parsed.rounds.map(shuffleRound);
 }
 
 export default async function handler(req, res) {
